@@ -1,0 +1,9 @@
+config.ini
+sitechecker.db
+*.pyc
+__pycache__/
+venv/
+.pytest_cache/
+*.egg-info/
+dist/
+build/

@@ -621,6 +621,42 @@ async def admin_site_rename(
     return RedirectResponse("/admin", status_code=303)
 
 
+@app.post("/admin/site/move")
+async def admin_site_move(
+    request: Request,
+    site_name: str = Form(...),
+    target_org: str = Form(...),
+):
+    if not _check_admin(request):
+        raise HTTPException(status_code=401)
+
+    site_name = site_name.strip()
+    target_org = target_org.strip()
+
+    if site_name not in config.sites:
+        raise HTTPException(status_code=400, detail="Site not found")
+    if target_org not in config.orgs:
+        raise HTTPException(status_code=400, detail="Target org not found")
+
+    current_org = None
+    for org_name in config.orgs:
+        if site_name in config.orgs[org_name]:
+            current_org = org_name
+            break
+
+    if current_org == target_org:
+        return RedirectResponse("/admin", status_code=303)
+
+    url = config.sites[site_name]
+    if current_org:
+        del config.orgs[current_org][site_name]
+    config.orgs[target_org][site_name] = url
+
+    config.save()
+    config._sync_db()
+    return RedirectResponse("/admin", status_code=303)
+
+
 @app.post("/admin/status/set")
 async def admin_status_set(
     request: Request,

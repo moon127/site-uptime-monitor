@@ -212,6 +212,68 @@ def test_rename_site_updates_config(admin_client):
     })
 
 
+# ── Move site between orgs ──────────────────────────────────────────────
+
+def test_move_site_between_orgs(admin_client, db):
+    from app.models import Site, Org
+    google = db.query(Site).filter(Site.name == "google").first()
+    assert google is not None
+    old_org_id = google.org_id
+
+    ubuntu = db.query(Org).filter(Org.name == "ubuntu").first()
+    assert ubuntu is not None
+
+    r = admin_client.post("/admin/site/move", data={
+        "site_name": "google", "target_org": "ubuntu"
+    })
+    assert r.status_code == 303
+
+    db.refresh(google)
+    assert google.org_id == ubuntu.id
+    assert google.org_id != old_org_id
+
+    from app.config import config
+    assert "google" in config.orgs["ubuntu"]
+    assert "google" not in config.orgs["misc"]
+
+
+def test_move_site_updates_config(admin_client):
+    from app.config import config
+    admin_client.post("/admin/site/move", data={
+        "site_name": "github", "target_org": "ubuntu"
+    })
+    assert "github" in config.orgs["ubuntu"]
+    assert "github" not in config.orgs["misc"]
+
+    # Move back for test isolation
+    admin_client.post("/admin/site/move", data={
+        "site_name": "github", "target_org": "misc"
+    })
+    assert "github" in config.orgs["misc"]
+    assert "github" not in config.orgs["ubuntu"]
+
+
+def test_move_site_same_org_is_noop(admin_client, db):
+    from app.models import Site
+    google = db.query(Site).filter(Site.name == "google").first()
+    old_org_id = google.org_id
+
+    r = admin_client.post("/admin/site/move", data={
+        "site_name": "google", "target_org": "misc"
+    })
+    assert r.status_code == 303
+
+    db.refresh(google)
+    assert google.org_id == old_org_id
+
+
+def test_move_site_requires_auth(client):
+    r = client.post("/admin/site/move", data={
+        "site_name": "google", "target_org": "ubuntu"
+    })
+    assert r.status_code == 401
+
+
 # ── Status management ──────────────────────────────────────────────────
 
 def test_set_org_status(admin_client, db):

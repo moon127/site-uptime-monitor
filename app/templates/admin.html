@@ -195,6 +195,9 @@
                         <div class="site-row">
                             <span class="site-info"><strong>{{ site.name }}</strong> &mdash; {{ site.url }}</span>
                             <button class="p-button--base js-rename-toggle" data-target="rename-site-{{ site_uid }}" style="font-size: 0.85rem; padding: 0.15rem 0.5rem;margin-right:0.25rem;">Rename</button>
+                            {% if org_names|length > 1 %}
+                            <button class="p-button--base js-move-toggle" data-target="move-site-{{ site_uid }}" style="font-size: 0.85rem; padding: 0.15rem 0.5rem;margin-right:0.25rem;">Move</button>
+                            {% endif %}
                             <form method="POST" action="/admin/site/delete" class="inline-form">
                                 <input type="hidden" name="site_name" value="{{ site.name }}" />
                                 <button class="p-button--negative" style="font-size: 0.85rem; padding: 0.25rem 0.75rem;"
@@ -210,6 +213,21 @@
                             <button type="submit" class="p-button--positive" style="font-size:0.85rem;padding:0.25rem 0.75rem;">Save</button>
                             <button type="button" class="p-button--base js-rename-cancel" data-target="rename-site-{{ site_uid }}" style="font-size:0.85rem;padding:0.25rem 0.75rem;">Cancel</button>
                         </form>
+                        {% if org_names|length > 1 %}
+                        <form method="POST" action="/admin/site/move" id="move-site-{{ site_uid }}" style="display:none;margin-bottom:0.5rem;padding:0.5rem;background:var(--color-bg-table-header,#f7f7f7);border-radius:4px;">
+                            <input type="hidden" name="site_name" value="{{ site.name }}" />
+                            <label for="move-target-{{ site_uid }}">Move to org:</label>
+                            <select id="move-target-{{ site_uid }}" name="target_org" required class="p-input" style="width:auto;display:inline-block;margin-right:0.5rem;">
+                                {% for oname in org_names %}
+                                {% if oname != org.name %}
+                                <option value="{{ oname }}">{{ oname }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="p-button--positive" style="font-size:0.85rem;padding:0.25rem 0.75rem;">Move</button>
+                            <button type="button" class="p-button--base js-move-cancel" data-target="move-site-{{ site_uid }}" style="font-size:0.85rem;padding:0.25rem 0.75rem;">Cancel</button>
+                        </form>
+                        {% endif %}
                         {% endfor %}
                         {% else %}
                         <p class="p-text--default u-no-margin--bottom" style="font-style: italic; padding: 0.25rem 0;">No sites in this organisation.</p>
@@ -403,6 +421,24 @@
         });
 
         document.querySelectorAll('.js-rename-cancel').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var target = document.getElementById(this.dataset.target);
+                if (target) {
+                    target.style.display = 'none';
+                }
+            });
+        });
+
+        document.querySelectorAll('.js-move-toggle').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var target = document.getElementById(this.dataset.target);
+                if (target) {
+                    target.style.display = target.style.display === 'none' ? '' : 'none';
+                }
+            });
+        });
+
+        document.querySelectorAll('.js-move-cancel').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var target = document.getElementById(this.dataset.target);
                 if (target) {

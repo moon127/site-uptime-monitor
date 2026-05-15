@@ -41,6 +41,9 @@ pip install -r requirements.txt
 
 ## Configuration
 
+`config.ini` is optional. If it doesn't exist, it will be created automatically
+on first run — you can then add all sites and organisations via the admin panel.
+
 Edit `config.ini` in the project root:
 
 ```ini
