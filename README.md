@@ -26,7 +26,7 @@ FastAPI-based website monitoring tool that polls configured URLs at a regular in
 
 ```bash
 # Clone or enter the project directory
-cd ubuntu-online-check
+cd site-uptime-monitor
 
 # Create a virtual environment
 python3 -m venv venv
@@ -160,8 +160,8 @@ After=network.target
 [Service]
 Type=simple
 User=www-data
-WorkingDirectory=/opt/ubuntu-online-check
-ExecStart=/opt/ubuntu-online-check/venv/bin/gunicorn -w 1 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
+WorkingDirectory=/opt/site-uptime-monitor
+ExecStart=/opt/site-uptime-monitor/venv/bin/gunicorn -w 1 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
 Restart=always
 RestartSec=10
 
@@ -220,7 +220,7 @@ make lint-fix      # auto-fix lint issues
 ## Project structure
 
 ```
-ubuntu-online-check/
+site-uptime-monitor/
 ├── alembic/
 │   ├── versions/         # Migration scripts
 │   ├── env.py            # Alembic environment config
