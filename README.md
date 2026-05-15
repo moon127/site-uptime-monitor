@@ -26,6 +26,7 @@ FastAPI-based website monitoring tool that polls configured URLs at a regular in
 
 ```bash
 # Clone or enter the project directory
+git clone https://github.com/moon127/site-uptime-monitor
 cd site-uptime-monitor
 
 # Create a virtual environment
