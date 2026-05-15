@@ -1,9 +1,10 @@
+import os
 from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DB_DIR = Path(__file__).resolve().parent.parent
+DB_DIR = Path(os.environ.get("DATA_DIR", str(Path(__file__).resolve().parent.parent)))
 DB_PATH = DB_DIR / "sitechecker.db"
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 

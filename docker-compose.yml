@@ -1,0 +1,9 @@
+services:
+  site-uptime-monitor:
+    build: .
+    container_name: site-uptime-monitor
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped

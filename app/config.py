@@ -1,11 +1,13 @@
 import configparser
+import os
 from pathlib import Path
 
 from app.database import SessionLocal
 from app.models import Org, Site
 
 APP_DIR = Path(__file__).resolve().parent.parent
-CONFIG_PATH = APP_DIR / "config.ini"
+DATA_DIR = Path(os.environ.get("DATA_DIR", str(APP_DIR)))
+CONFIG_PATH = DATA_DIR / "config.ini"
 
 
 class Config:

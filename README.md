@@ -141,6 +141,39 @@ Open http://localhost:8000 in your browser.
 - `--port <PORT>` — change the port (default: 8000)
 - `--reload` — auto-restart on file changes (useful during development)
 
+### Running with Docker
+
+```bash
+# Create a data directory for persistent config and database
+mkdir data
+
+# Pull and run from Docker Hub
+docker run -d \
+  --name site-uptime-monitor \
+  -p 8000:8000 \
+  -v ./data:/data \
+  --restart unless-stopped \
+  garethwoolridge/site-uptime-monitor
+```
+
+Or build and run locally with Compose:
+
+```bash
+docker compose up -d
+```
+
+The container stores `config.ini` and `sitechecker.db` in `/data` inside the
+container, which maps to the `./data` directory on your host. You can place
+an existing `config.ini` there before starting, or configure everything via
+the admin panel after first run.
+
+To rebuild after updating:
+
+```bash
+docker compose build --pull
+docker compose up -d
+```
+
 ### Running in production
 
 ```bash
@@ -245,6 +278,8 @@ site-uptime-monitor/
 │   └── test_migrations.py # Alembic migration tests
 ├── alembic.ini           # Alembic configuration
 ├── config.ini            # Site list and settings
+├── docker-compose.yml    # Docker Compose configuration
+├── Dockerfile            # OCI image build
 ├── Makefile              # Convenience targets (test, lint, clean)
 ├── pyproject.toml        # Test / lint tool configuration
 ├── requirements.txt
