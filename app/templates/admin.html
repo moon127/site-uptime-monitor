@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Site Monitor</title>
+    <link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla_framework_version_4.51.0.min.css" />
+    <style>
+        .stat-card { text-align: center; padding: 1.5rem 0.5rem; }
+        .stat-number { font-size: 2rem; font-weight: 600; display: block; }
+        .stat-label { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+        .admin-nav { display: flex; gap: 1rem; align-items: center; }
+        .admin-nav a { color: #0066cc; }
+        .admin-nav .logout-form { margin-left: auto; }
+        .inline-form { display: inline; }
+        .site-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; }
+        .site-row + .site-row { border-top: 1px solid #e5e5e5; }
+        .site-row .site-info { flex: 1; }
+        .org-block { margin-bottom: 1.5rem; }
+        .org-header-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+        .mgmt-section { margin-bottom: 2rem; }
+
+        [data-theme="dark"] body { background: #11131a; color: #cdd0d4; }
+        [data-theme="dark"] .p-card { background: #1e2130; color: #cdd0d4; }
+        [data-theme="dark"] .p-strip { background: #181b24; }
+        [data-theme="dark"] th { background: #262a3a; color: #8a8e9e; border-bottom-color: #2e3245; }
+        [data-theme="dark"] td { border-bottom-color: #2e3245; color: #cdd0d4; }
+        [data-theme="dark"] .stat-label { color: #8a8e9e; }
+        [data-theme="dark"] .site-row + .site-row { border-top-color: #2e3245; }
+        [data-theme="dark"] .p-button--base {
+            background: #262a3a; border-color: #3a3f55; color: #cdd0d4;
+        }
+        [data-theme="dark"] a { color: #66aaff; }
+        .badge-degraded { background: #f99b11; color: #fff; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600; }
+        .badge-maintenance { background: #0066cc; color: #fff; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600; }
+        .status-active { color: #0e8420; font-weight: 500; }
+        .status-ended { color: #666; }
+
+        .status-table-wrap { overflow-x: auto; }
+        .status-table-wrap table { table-layout: auto !important; }
+        .status-table-wrap td { overflow: visible; }
+
+        @media (max-width: 772px) {
+            .admin-nav { flex-wrap: wrap; }
+            .admin-nav .logout-form { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+    <section class="p-strip--highlighted is-shallow">
+        <div class="row">
+            <div class="col-12">
+                <div class="admin-nav">
+                    <h1 class="p-heading--3 u-no-margin--bottom">Admin Panel</h1>
+                    <a href="/">Monitor Dashboard</a>
+                    <form method="POST" action="/admin/logout" class="inline-form logout-form">
+                        <button class="p-button--base">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="p-strip is-shallow">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="p-heading--4">Statistics</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <div class="p-card stat-card">
+                    <span class="stat-number">{{ total_checks }}</span>
+                    <span class="stat-label">Total Checks</span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="p-card stat-card">
+                    <span class="stat-number">{{ total_sites }}</span>
+                    <span class="stat-label">Sites</span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="p-card stat-card">
+                    <span class="stat-number">{{ total_orgs }}</span>
+                    <span class="stat-label">Organisations</span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="p-card stat-card">
+                    <span class="stat-number">{{ total_up }}</span>
+                    <span class="stat-label">UP Checks</span>
+                </div>
+            </div>
+        </div>
+        <div class="row" style="margin-top: 1rem;">
+            <div class="col-12">
+                <div class="p-table--mobile-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Site</th>
+                                <th class="u-align--right">Total Checks</th>
+                                <th class="u-align--right">UP</th>
+                                <th class="u-align--right">DOWN</th>
+                                <th class="u-align--right">Uptime %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in site_stats %}
+                            <tr>
+                                <td>{{ s.name }}</td>
+                                <td class="u-align--right">{{ s.total }}</td>
+                                <td class="u-align--right"><span class="status-up" style="color:#0e8420;">{{ s.up }}</span></td>
+                                <td class="u-align--right"><span class="status-down" style="color:#c7162b;">{{ s.down }}</span></td>
+                                <td class="u-align--right">{{ "%.1f"|format(s.up / s.total * 100) if s.total else "N/A" }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="p-strip is-shallow">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="p-heading--4">Manage</h2>
+            </div>
+        </div>
+
+        <div class="row mgmt-section">
+            <div class="col-6">
+                <div class="p-card" style="padding: 1.5rem;">
+                    <h3 class="p-heading--5">Add Organisation</h3>
+                    <form method="POST" action="/admin/org/add">
+                        <label for="org_name">Organisation name:</label>
+                        <input type="text" id="org_name" name="org_name" required class="p-input" style="width:100%;" />
+                        <label for="org_site_name" style="margin-top: 0.75rem;">Initial site name (optional):</label>
+                        <input type="text" id="org_site_name" name="site_name" class="p-input" style="width:100%;" />
+                        <label for="org_url" style="margin-top: 0.75rem;">Initial site URL (optional):</label>
+                        <input type="url" id="org_url" name="url" class="p-input" style="width:100%;" placeholder="https://..." />
+                        <button type="submit" class="p-button--positive" style="margin-top: 1rem;">Add Organisation</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-card" style="padding: 1.5rem;">
+                    <h3 class="p-heading--5">Add Site to Existing Org</h3>
+                    <form method="POST" action="/admin/site/add">
+                        <label for="add_site_org">Organisation:</label>
+                        <select id="add_site_org" name="org_name" required class="p-input" style="width:100%;">
+                            {% for org in orgs %}
+                            <option value="{{ org.name }}">{{ org.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="add_site_name" style="margin-top: 0.75rem;">Site name:</label>
+                        <input type="text" id="add_site_name" name="site_name" required class="p-input" style="width:100%;" />
+                        <label for="add_site_url" style="margin-top: 0.75rem;">URL:</label>
+                        <input type="url" id="add_site_url" name="url" required class="p-input" style="width:100%;" placeholder="https://..." />
+                        <button type="submit" class="p-button--positive" style="margin-top: 1rem;">Add Site</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <h3 class="p-heading--5">Current Orgs &amp; Sites</h3>
+                <div class="p-card" style="padding: 1.5rem;">
+                    {% for org in orgs %}
+                    <div class="org-block">
+                        <div class="org-header-row">
+                            <h4 class="p-heading--5 u-no-margin--bottom">{{ org.name }}</h4>
+                            <button class="p-button--base js-rename-toggle" data-target="rename-org-{{ loop.index0 }}" style="font-size: 0.85rem; padding: 0.25rem 0.75rem;">Rename</button>
+                            <form method="POST" action="/admin/org/delete" class="inline-form">
+                                <input type="hidden" name="org_name" value="{{ org.name }}" />
+                                <button class="p-button--negative" style="font-size: 0.85rem; padding: 0.25rem 0.75rem;"
+                                        onclick="return confirm('Delete org &#39;{{ org.name }}&#39; and all its sites?');">
+                                    Delete Org
+                                </button>
+                            </form>
+                        </div>
+                        <form method="POST" action="/admin/org/rename" id="rename-org-{{ loop.index0 }}" style="display:none;margin-bottom:0.5rem;padding:0.5rem;background:var(--color-bg-table-header,#f7f7f7);border-radius:4px;">
+                            <input type="hidden" name="org_name" value="{{ org.name }}" />
+                            <label for="rename-org-input-{{ loop.index0 }}">New name:</label>
+                            <input type="text" id="rename-org-input-{{ loop.index0 }}" name="new_name" required class="p-input" value="{{ org.name }}" style="width:auto;display:inline-block;margin-right:0.5rem;" />
+                            <button type="submit" class="p-button--positive" style="font-size:0.85rem;padding:0.25rem 0.75rem;">Save</button>
+                            <button type="button" class="p-button--base js-rename-cancel" data-target="rename-org-{{ loop.index0 }}" style="font-size:0.85rem;padding:0.25rem 0.75rem;">Cancel</button>
+                        </form>
+                        {% if org.sites %}
+                        {% for site in org.sites %}
+                        {% set site_uid = org.name|replace(' ','_') + '-' + site.name|replace(' ','_') %}
+                        <div class="site-row">
+                            <span class="site-info"><strong>{{ site.name }}</strong> &mdash; {{ site.url }}</span>
+                            <button class="p-button--base js-rename-toggle" data-target="rename-site-{{ site_uid }}" style="font-size: 0.85rem; padding: 0.15rem 0.5rem;margin-right:0.25rem;">Rename</button>
+                            <form method="POST" action="/admin/site/delete" class="inline-form">
+                                <input type="hidden" name="site_name" value="{{ site.name }}" />
+                                <button class="p-button--negative" style="font-size: 0.85rem; padding: 0.25rem 0.75rem;"
+                                        onclick="return confirm('Delete site &#39;{{ site.name }}&#39;?');">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                        <form method="POST" action="/admin/site/rename" id="rename-site-{{ site_uid }}" style="display:none;margin-bottom:0.5rem;padding:0.5rem;background:var(--color-bg-table-header,#f7f7f7);border-radius:4px;">
+                            <input type="hidden" name="site_name" value="{{ site.name }}" />
+                            <label for="rename-site-input-{{ site_uid }}">New name:</label>
+                            <input type="text" id="rename-site-input-{{ site_uid }}" name="new_name" required class="p-input" value="{{ site.name }}" style="width:auto;display:inline-block;margin-right:0.5rem;" />
+                            <button type="submit" class="p-button--positive" style="font-size:0.85rem;padding:0.25rem 0.75rem;">Save</button>
+                            <button type="button" class="p-button--base js-rename-cancel" data-target="rename-site-{{ site_uid }}" style="font-size:0.85rem;padding:0.25rem 0.75rem;">Cancel</button>
+                        </form>
+                        {% endfor %}
+                        {% else %}
+                        <p class="p-text--default u-no-margin--bottom" style="font-style: italic; padding: 0.25rem 0;">No sites in this organisation.</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="p-strip is-shallow">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="p-heading--4">Status Management</h2>
+            </div>
+        </div>
+
+        <div class="row mgmt-section">
+            <div class="col-12">
+                <div class="p-card" style="padding: 1.5rem;">
+                    <h3 class="p-heading--5">Current Active Statuses</h3>
+                    {% if active_statuses %}
+                    <div class="p-table--mobile-card status-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Scope</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Message</th>
+                                    <th>Since</th>
+                                    <th>Update</th>
+                                    <th>Clear</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in active_statuses %}
+                                <tr>
+                                    <td>{{ s.scope }}</td>
+                                    <td>{{ s.scope_name }}</td>
+                                    <td><span class="badge-{{ s.status_type }}">{{ s.status_type }}</span></td>
+                                    <td>{{ s.message }}{% if s.updates %} <span style="font-size:0.75rem;color:#888;">(+{{ s.updates|length }})</span>{% endif %}</td>
+                                    <td>{{ s.created_at.strftime('%Y-%m-%d %H:%M UTC') }}</td>
+                                    <td>
+                                        <form method="POST" action="/admin/status/update" class="inline-form" style="display:flex;gap:0.25rem;flex-wrap:wrap;">
+                                            <input type="hidden" name="status_id" value="{{ s.id }}" />
+                                            <input type="text" name="message" required placeholder="Update" class="p-input" style="max-width:100px;font-size:0.85rem;padding:0.2rem 0.4rem;" />
+                                            <button class="p-button--base" style="font-size:0.8rem;padding:0.2rem 0.75rem;white-space:nowrap;">Update</button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="/admin/status/clear" class="inline-form">
+                                            <input type="hidden" name="status_id" value="{{ s.id }}" />
+                                            <button class="p-button--base" style="font-size: 0.85rem; padding: 0.25rem 0.75rem;">Clear</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="p-text--default u-no-margin--bottom">No active statuses.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row mgmt-section">
+            <div class="col-6">
+                <div class="p-card" style="padding: 1.5rem;">
+                    <h3 class="p-heading--5">Set Status</h3>
+                    <form method="POST" action="/admin/status/set">
+                        <label for="status_scope">Scope:</label>
+                        <select id="status_scope" name="scope" required class="p-input" style="width:100%;">
+                            <option value="org">Organisation</option>
+                            <option value="site">Site</option>
+                        </select>
+                        <label for="status_scope_name" style="margin-top: 0.75rem;">Name:</label>
+                        <select id="status_scope_name" name="scope_name" required class="p-input" style="width:100%;"></select>
+                        <label for="status_type" style="margin-top: 0.75rem;">Type:</label>
+                        <select id="status_type" name="status_type" required class="p-input" style="width:100%;">
+                            <option value="degraded">Degraded</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                        <label for="status_message" style="margin-top: 0.75rem;">Message:</label>
+                        <input type="text" id="status_message" name="message" required class="p-input" style="width:100%;" placeholder="e.g. Investigating increased latency" />
+                        <button type="submit" class="p-button--positive" style="margin-top: 1rem;">Set Status</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-card" style="padding: 1.5rem;">
+                    <h3 class="p-heading--5">Status History</h3>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        {% if status_history %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Scope</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Message</th>
+                                    <th>Started</th>
+                                    <th>Ended</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in status_history %}
+                                <tr>
+                                    <td>{{ s.scope }}</td>
+                                    <td>{{ s.scope_name }}</td>
+                                    <td><span class="badge-{{ s.status_type }}">{{ s.status_type }}</span></td>
+                                    <td>
+                                        {{ s.message }}
+                                        {% if s.updates %}
+                                        <button class="p-button--base js-toggle-updates" data-target="updates-{{ s.id }}" style="font-size:0.75rem;padding:0.1rem 0.4rem;margin-left:0.25rem;">{{ s.updates|length }} updates</button>
+                                        {% endif %}
+                                    </td>
+                                    <td style="font-size: 0.85rem;">{{ s.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td style="font-size: 0.85rem;">
+                                        {% if s.active %}
+                                        <span class="status-active">Active</span>
+                                        {% elif s.ended_at %}
+                                        {{ s.ended_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                        <span class="status-ended">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if s.updates %}
+                                <tr id="updates-{{ s.id }}" style="display:none;">
+                                    <td colspan="6" style="padding:0.5rem 1rem;background:var(--color-bg-table-header,#f7f7f7);">
+                                        <div style="font-size:0.85rem;">
+                                        {% for u in s.updates %}
+                                        <div style="padding:0.15rem 0;">{{ u.timestamp[:19] | replace('T', ' ') }} — {{ u.message }}</div>
+                                        {% endfor %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p class="p-text--default u-no-margin--bottom">No status history yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        var orgNames = {{ org_names|tojson|safe }};
+        var siteNames = {{ site_names|tojson|safe }};
+
+        function populateScopeNames() {
+            var scope = document.getElementById('status_scope').value;
+            var select = document.getElementById('status_scope_name');
+            var names = scope === 'org' ? orgNames : siteNames;
+            select.innerHTML = '';
+            names.forEach(function(name) {
+                var opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                select.appendChild(opt);
+            });
+        }
+
+        document.getElementById('status_scope').addEventListener('change', populateScopeNames);
+        populateScopeNames();
+
+        document.querySelectorAll('.js-toggle-updates').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var target = document.getElementById(this.dataset.target);
+                if (target) {
+                    target.style.display = target.style.display === 'none' ? '' : 'none';
+                }
+            });
+        });
+
+        document.querySelectorAll('.js-rename-toggle').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var target = document.getElementById(this.dataset.target);
+                if (target) {
+                    target.style.display = target.style.display === 'none' ? '' : 'none';
+                }
+            });
+        });
+
+        document.querySelectorAll('.js-rename-cancel').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var target = document.getElementById(this.dataset.target);
+                if (target) {
+                    target.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

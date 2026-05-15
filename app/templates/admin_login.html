@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Site Monitor</title>
+    <link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla_framework_version_4.51.0.min.css" />
+    <style>
+        .auth-wrap { max-width: 400px; margin: 4rem auto; }
+        .error-msg { color: #c7162b; }
+        [data-theme="dark"] body { background: #11131a; color: #cdd0d4; }
+        [data-theme="dark"] .p-card { background: #1e2130; color: #cdd0d4; }
+        [data-theme="dark"] .p-button--base {
+            background: #262a3a; border-color: #3a3f55; color: #cdd0d4;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-wrap">
+        <div class="p-card" style="padding: 2rem;">
+            <h1 class="p-heading--3">Admin Login</h1>
+            {% if error %}
+            <p class="error-msg">{{ error }}</p>
+            {% endif %}
+            <form method="POST" action="/admin/login">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required
+                       class="p-input" style="width:100%;" />
+                <button type="submit" class="p-button--positive" style="margin-top: 1rem;">Login</button>
+            </form>
+            <p class="p-text--small" style="margin-top: 1rem;">
+                <a href="/">&larr; Back to Dashboard</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

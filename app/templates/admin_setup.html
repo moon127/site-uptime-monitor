@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Admin - Site Monitor</title>
+    <link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla_framework_version_4.51.0.min.css" />
+    <style>
+        .auth-wrap { max-width: 400px; margin: 4rem auto; }
+        .error-msg { color: #c7162b; }
+        [data-theme="dark"] body { background: #11131a; color: #cdd0d4; }
+        [data-theme="dark"] .p-card { background: #1e2130; color: #cdd0d4; }
+        [data-theme="dark"] .p-button--base {
+            background: #262a3a; border-color: #3a3f55; color: #cdd0d4;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-wrap">
+        <div class="p-card" style="padding: 2rem;">
+            <h1 class="p-heading--3">Create Admin Password</h1>
+            <p>This is the first run. Set an admin password to access the management dashboard.</p>
+            {% if error %}
+            <p class="error-msg">{{ error }}</p>
+            {% endif %}
+            <form method="POST" action="/admin/setup">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required minlength="6"
+                       class="p-input" style="width:100%;" />
+                <p class="p-text--small u-no-margin--bottom" style="margin-top: 0.5rem;">Minimum 6 characters</p>
+                <button type="submit" class="p-button--positive" style="margin-top: 1rem;">Create Password</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

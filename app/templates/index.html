@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Monitor</title>
+    <link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla_framework_version_4.51.0.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        .status-up { color: #0e8420; font-weight: 500; }
+        .status-down { color: #c7162b; font-weight: 500; }
+        .p-button.is-active {
+            background: #0066cc;
+            color: #fff;
+            border-color: #0066cc;
+        }
+        .p-button.is-active:hover {
+            background: #004999;
+            border-color: #004999;
+        }
+        .chart-card .p-card__content {
+            min-height: 240px;
+            position: relative;
+        }
+        .chart-card .p-card__content canvas {
+            max-height: 240px;
+        }
+        th.u-align--right, td.u-align--right {
+            text-align: right;
+        }
+        .theme-toggle-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+        }
+        .org-header {
+            cursor: pointer;
+            background: #f2f2f2;
+            font-weight: 600;
+        }
+        .org-header:hover {
+            background: #e5e5e5;
+        }
+        .org-toggle {
+            display: inline-block;
+            width: 1.2em;
+            font-size: 0.85em;
+        }
+        .org-heading {
+            cursor: pointer;
+            margin-bottom: 0.5rem !important;
+        }
+        .org-heading:hover {
+            opacity: 0.7;
+        }
+        .org-collapse-icon {
+            display: inline-block;
+            width: 1.2em;
+            font-size: 0.9em;
+        }
+        .org-charts {
+            margin-bottom: 1.5rem;
+        }
+        .org-btn {
+            margin-right: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .org-btn.is-hidden {
+            opacity: 0.4;
+        }
+        .badge-degraded { background: #f99b11; color: #fff; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; white-space: nowrap; }
+        .badge-maintenance { background: #0066cc; color: #fff; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; white-space: nowrap; }
+        .status-notice { font-size: 0.85rem; padding: 0.25rem 0.75rem; border-radius: 3px; margin-bottom: 0.75rem; }
+        .status-notice.degraded { background: #fff4e5; border-left: 3px solid #f99b11; }
+        .status-notice.maintenance { background: #e5f0ff; border-left: 3px solid #0066cc; }
+        [data-theme="dark"] .status-notice.degraded { background: #2a2210; border-left-color: #f99b11; color: #cdd0d4; }
+        [data-theme="dark"] .status-notice.maintenance { background: #0a1a2e; border-left-color: #0066cc; color: #cdd0d4; }
+
+        [data-theme="dark"] {
+            --color-bg: #11131a;
+            --color-bg-strip: #181b24;
+            --color-bg-strip-highlighted: #1e2130;
+            --color-bg-card: #1e2130;
+            --color-bg-table: #1e2130;
+            --color-bg-table-header: #262a3a;
+            --color-text: #cdd0d4;
+            --color-text-muted: #8a8e9e;
+            --color-border: #2e3245;
+            --color-button-base-bg: #262a3a;
+            --color-button-base-border: #3a3f55;
+            --color-button-base-text: #cdd0d4;
+            --chart-grid: #2e3245;
+            --chart-text: #8a8e9e;
+        }
+
+        [data-theme="dark"] body {
+            background: var(--color-bg);
+            color: var(--color-text);
+        }
+        [data-theme="dark"] .p-strip--highlighted {
+            background: var(--color-bg-strip-highlighted);
+        }
+        [data-theme="dark"] .p-strip {
+            background: var(--color-bg-strip);
+        }
+        [data-theme="dark"] .p-card {
+            background: var(--color-bg-card);
+            color: var(--color-text);
+        }
+        [data-theme="dark"] table,
+        [data-theme="dark"] .p-table--mobile-card table {
+            background: var(--color-bg-table);
+        }
+        [data-theme="dark"] th {
+            background: var(--color-bg-table-header);
+            color: var(--color-text-muted);
+            border-bottom-color: var(--color-border);
+        }
+        [data-theme="dark"] td {
+            border-bottom-color: var(--color-border);
+            color: var(--color-text);
+        }
+        [data-theme="dark"] hr {
+            border-color: var(--color-border);
+        }
+        [data-theme="dark"] .p-button--base {
+            background: var(--color-button-base-bg);
+            border-color: var(--color-button-base-border);
+            color: var(--color-button-base-text);
+        }
+        [data-theme="dark"] .p-button--base:hover {
+            background: #2e3245;
+            border-color: #4a4f65;
+        }
+        [data-theme="dark"] .p-button.is-active {
+            background: #0066cc;
+            border-color: #0066cc;
+            color: #fff;
+        }
+        [data-theme="dark"] .p-button.is-active:hover {
+            background: #0052a3;
+            border-color: #0052a3;
+        }
+        [data-theme="dark"] .p-button:not(.is-active):not(.p-button--base) {
+            background: var(--color-button-base-bg);
+            border-color: var(--color-button-base-border);
+            color: var(--color-button-base-text);
+        }
+        [data-theme="dark"] .status-up { color: #38a848; }
+        [data-theme="dark"] .status-down { color: #e95454; }
+        [data-theme="dark"] .p-notification--information {
+            background: var(--color-bg-card);
+        }
+        [data-theme="dark"] .p-notification--information .p-notification__title,
+        [data-theme="dark"] .p-notification--information .p-notification__message {
+            color: var(--color-text);
+        }
+        [data-theme="dark"] .p-text--default {
+            color: var(--color-text-muted);
+        }
+        [data-theme="dark"] .p-heading--2 {
+            color: var(--color-text);
+        }
+        [data-theme="dark"] .p-heading--4 {
+            color: var(--color-text);
+        }
+        [data-theme="dark"] .u-sv1 {
+            border-color: var(--color-border);
+        }
+        [data-theme="dark"] .org-header {
+            background: #1e2130;
+        }
+        [data-theme="dark"] .org-header:hover {
+            background: #262a3a;
+        }
+        [data-theme="dark"] a { color: #66aaff; }
+
+        @media (max-width: 772px) {
+            .period-row { text-align: left !important; }
+        }
+    </style>
+</head>
+<body>
+    <section class="p-strip--highlighted is-shallow">
+        <div class="row">
+            <div class="col-9">
+                <h1 class="p-heading--2">Site Status Monitor</h1>
+                <p class="p-text--default">Real-time website monitoring &mdash; data updates every {{ poll_interval }}s</p>
+            </div>
+            <div class="col-3">
+                <div class="theme-toggle-wrap" style="gap: 0.5rem;">
+                    <a href="/admin" class="p-button--base" style="text-decoration: none; font-size: 0.85rem; padding: 0.4rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; color: inherit;">Admin</a>
+                    <button id="theme-toggle" class="p-button--base">☾ Dark</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="p-strip is-shallow">
+        <div class="row">
+            <div class="col-12 period-row" style="text-align: right;">
+                <a href="/?period=hourly" class="p-button {% if period == 'hourly' %}is-active{% endif %}">Hourly</a>
+                <a href="/?period=daily" class="p-button {% if period == 'daily' %}is-active{% endif %}">Daily</a>
+                <a href="/?period=monthly" class="p-button {% if period == 'monthly' %}is-active{% endif %}">Monthly</a>
+            </div>
+        </div>
+    </section>
+
+    {% if sites %}
+    <section class="p-strip is-shallow">
+        <div class="row">
+            <div class="col-12">
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-bottom: 0.5rem; font-size: 0.85rem;">
+                    <a href="#" class="js-expand-all-table" style="color: #0066cc;">Expand all</a>
+                    <a href="#" class="js-collapse-all-table" style="color: #0066cc;">Collapse all</a>
+                </div>
+                <div class="p-table--mobile-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Site</th>
+                                <th>Status</th>
+                                <th class="u-align--right">Uptime</th>
+                                <th class="u-align--right">Current (ms)</th>
+                                <th class="u-align--right">Min (ms)</th>
+                                <th class="u-align--right">Max (ms)</th>
+                                <th class="u-align--right">Avg (ms)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for org in orgs %}
+                            <tr class="org-header" data-org="{{ org.name }}">
+                                <td colspan="7">
+                                    <span class="org-toggle">▼</span> {{ org.name }}
+                                    {% if org.status %}<span class="badge-{{ org.status.type }}">{{ org.status.type }}</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% for site in org.sites %}
+                            <tr class="org-site" data-org="{{ org.name }}">
+                                <td aria-label="Site">{{ site.display_name }}{% if site.manual_status %}<span class="badge-{{ site.manual_status.type }}">{{ site.manual_status.type }}</span>{% endif %}</td>
+                                <td aria-label="Status">
+                                    <span class="status-{{ site.status|lower }}">{{ site.status }}</span>
+                                </td>
+                                <td aria-label="Uptime" class="u-align--right">{{ site.uptime_pct }}</td>
+                                <td aria-label="Current (ms)" class="u-align--right">{{ site.current_ms }}</td>
+                                <td aria-label="Min (ms)" class="u-align--right">{{ site.min_ms }}</td>
+                                <td aria-label="Max (ms)" class="u-align--right">{{ site.max_ms }}</td>
+                                <td aria-label="Avg (ms)" class="u-align--right">{{ site.avg_ms }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="p-strip is-shallow">
+        {% if orgs|length > 1 %}
+        <div class="row">
+            <div class="col-12" style="margin-bottom: 1rem;">
+                {% for org in orgs %}
+                <button class="p-button org-btn is-active" data-org="{{ org.name }}">{{ org.name }}</button>
+                {% endfor %}
+                <span style="margin-left: 1rem; font-size: 0.85rem;">
+                    <a href="#" class="js-expand-all-charts" style="color: #0066cc;">Expand all</a>
+                    <a href="#" class="js-collapse-all-charts" style="color: #0066cc; margin-left: 0.5rem;">Collapse all</a>
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% for org in orgs %}
+        {% set org_idx = loop.index0 %}
+        <div class="org-charts" data-org="{{ org.name }}">
+            <div class="row">
+                <div class="col-12">
+                    <h3 class="p-heading--4 org-heading" data-org="{{ org.name }}">
+                        <span class="org-collapse-icon">▼</span> {{ org.name }}
+                    </h3>
+                </div>
+            </div>
+            {% if org.status %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="status-notice {{ org.status.type }} js-status-notice" data-org="{{ org.name }}" style="cursor:pointer;">
+                        <strong>{{ org.status.type|title }}:</strong> {{ org.status.message }}
+                        {% if org.status.updates %}<span style="font-size:0.8rem;margin-left:0.5rem;opacity:0.7;">(+{{ org.status.updates|length }})</span>{% endif %}
+                        {% if org.status.updates %}
+                        <div class="js-updates-list" style="display:none;margin-top:0.5rem;font-size:0.85rem;border-top:1px solid rgba(255,255,255,0.2);padding-top:0.5rem;">
+                            {% for u in org.status.updates %}
+                            <div style="padding:0.1rem 0;">{{ u.timestamp[:19] | replace('T', ' ') }} — {{ u.message }}</div>
+                            {% endfor %}
+                            <div style="padding:0.1rem 0;font-weight:500;">now — {{ org.status.message }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="org-chart-rows">
+                <div class="row">
+                    {% for site in org.sites %}
+                    <div class="col-6">
+                        <div class="p-card chart-card">
+                            <h4 class="p-card__title p-heading--5">{{ site.display_name }}</h4>
+                            <hr class="u-sv1" />
+                            <div class="p-card__content">
+                                <canvas id="chart-{{ org_idx }}-{{ loop.index0 }}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    {% if loop.index is even and not loop.last %}
+                </div>
+                <div class="row">
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+    {% else %}
+    <section class="p-strip is-shallow">
+        <div class="row">
+            <div class="col-6 col-start-large-4">
+                <div class="p-notification--information">
+                    <div class="p-notification__content">
+                        <h5 class="p-notification__title">No sites configured</h5>
+                        <p class="p-notification__message">
+                            Add sites to <code>config.ini</code> under the <code>[sites]</code> or <code>[org:name]</code> sections and restart.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <script>
+        (function() {
+            var chartInstances = [];
+
+            function setTheme(theme) {
+                var html = document.documentElement;
+                var btn = document.getElementById('theme-toggle');
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                if (btn) {
+                    btn.textContent = theme === 'dark' ? '\u2600 Light' : '\u263E Dark';
+                }
+                var isDark = theme === 'dark';
+                var gridColor = isDark ? '#2e3245' : '#f0f0f0';
+                var textColor = isDark ? '#8a8e9e' : '#666';
+                chartInstances.forEach(function(ch) {
+                    if (ch.options.scales && ch.options.scales.y) {
+                        ch.options.scales.y.grid.color = gridColor;
+                        ch.options.scales.y.ticks.color = textColor;
+                        if (ch.options.scales.y.title) {
+                            ch.options.scales.y.title.color = textColor;
+                        }
+                    }
+                    if (ch.options.scales && ch.options.scales.y1) {
+                        ch.options.scales.y1.ticks.color = textColor;
+                        if (ch.options.scales.y1.title) {
+                            ch.options.scales.y1.title.color = textColor;
+                        }
+                    }
+                    if (ch.options.scales && ch.options.scales.x) {
+                        ch.options.scales.x.ticks.color = textColor;
+                    }
+                    ch.update();
+                });
+            }
+
+            var saved = localStorage.getItem('theme');
+            if (saved === 'dark') {
+                setTheme('dark');
+            }
+
+            var btn = document.getElementById('theme-toggle');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    var html = document.documentElement;
+                    var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    setTheme(next);
+                });
+            }
+
+            var chartData = {{ chart_data|safe }};
+            var orgs = {{ orgs|tojson|safe }};
+            var isDark = (localStorage.getItem('theme') || 'light') === 'dark';
+            var gridColor = isDark ? '#2e3245' : '#f0f0f0';
+            var textColor = isDark ? '#8a8e9e' : '#666';
+
+            var colors = [
+                '#0066cc', '#0e8420', '#c7162b', '#a87ca0', '#f99b11',
+                '#2b2b2b', '#666666', '#006b75', '#d4770a', '#5b4b8a'
+            ];
+
+            orgs.forEach(function(org, oi) {
+                org.sites.forEach(function(site, si) {
+                    var data = chartData[site.name];
+                    if (!data || !data.timestamps || data.timestamps.length === 0) return;
+
+                    var ctx = document.getElementById('chart-' + oi + '-' + si);
+                    if (!ctx) return;
+
+                    var chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.timestamps,
+                            datasets: [
+                                {
+                                    label: 'Response (ms)',
+                                    data: data.response_time,
+                                    borderColor: colors[(oi + si) % colors.length],
+                                    backgroundColor: colors[(oi + si) % colors.length] + '15',
+                                    yAxisID: 'y',
+                                    tension: 0.2,
+                                    pointRadius: 2,
+                                    pointHitRadius: 6,
+                                    borderWidth: 2,
+                                    fill: true,
+                                },
+                                {
+                                    label: 'Uptime (%)',
+                                    data: data.uptime,
+                                    borderColor: '#0e8420',
+                                    backgroundColor: '#0e842015',
+                                    yAxisID: 'y1',
+                                    tension: 0.2,
+                                    pointRadius: 2,
+                                    pointHitRadius: 6,
+                                    borderWidth: 2,
+                                    fill: true,
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { intersect: false, mode: 'index' },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: { boxWidth: 12, padding: 12, font: { size: 11 }, color: textColor }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { maxTicksLimit: 12, font: { size: 10 }, color: textColor },
+                                    grid: { display: false }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    position: 'left',
+                                    title: { display: true, text: 'ms', font: { size: 11 }, color: textColor },
+                                    ticks: { font: { size: 10 }, color: textColor },
+                                    grid: { color: gridColor }
+                                },
+                                y1: {
+                                    min: 0,
+                                    max: 100,
+                                    position: 'right',
+                                    title: { display: true, text: '%', font: { size: 11 }, color: textColor },
+                                    ticks: { font: { size: 10 }, color: textColor, callback: function(v) { return v + '%'; } },
+                                    grid: { drawOnChartArea: false }
+                                }
+                            }
+                        }
+                    });
+                    chartInstances.push(chart);
+                });
+            });
+
+            document.querySelectorAll('.org-header').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var org = this.dataset.org;
+                    var rows = document.querySelectorAll('.org-site[data-org="' + org + '"]');
+                    var toggle = this.querySelector('.org-toggle');
+                    var collapsed = toggle.textContent === '▶';
+                    rows.forEach(function(row) {
+                        row.style.display = collapsed ? '' : 'none';
+                    });
+                    toggle.textContent = collapsed ? '▼' : '▶';
+                });
+            });
+
+            document.querySelectorAll('.org-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var org = this.dataset.org;
+                    var containers = document.querySelectorAll('.org-charts[data-org="' + org + '"]');
+                    var isActive = this.classList.contains('is-active');
+                    containers.forEach(function(c) {
+                        c.style.display = isActive ? 'none' : '';
+                        if (!isActive) {
+                            var rows = c.querySelector('.org-chart-rows');
+                            if (rows) rows.style.display = '';
+                            var icon = c.querySelector('.org-collapse-icon');
+                            if (icon) icon.textContent = '\u25BC';
+                        }
+                    });
+                    if (isActive) {
+                        this.classList.remove('is-active');
+                        this.classList.add('is-hidden');
+                    } else {
+                        this.classList.add('is-active');
+                        this.classList.remove('is-hidden');
+                        chartInstances.forEach(function(ch) { ch.resize(); });
+                    }
+                });
+            });
+
+            document.querySelectorAll('.org-heading').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var org = this.dataset.org;
+                    var icon = this.querySelector('.org-collapse-icon');
+                    var collapsed = icon.textContent === '▶';
+                    var containers = document.querySelectorAll('.org-charts[data-org="' + org + '"]');
+                    containers.forEach(function(c) {
+                        var rows = c.querySelector('.org-chart-rows');
+                        if (rows) {
+                            rows.style.display = collapsed ? '' : 'none';
+                        }
+                    });
+                    icon.textContent = collapsed ? '▼' : '▶';
+                    chartInstances.forEach(function(ch) { ch.resize(); });
+                });
+            });
+
+            function toggleAllTable(expand) {
+                document.querySelectorAll('.org-header').forEach(function(el) {
+                    var toggle = el.querySelector('.org-toggle');
+                    var isCollapsed = toggle.textContent === '\u25B6';
+                    if ((expand && isCollapsed) || (!expand && !isCollapsed)) {
+                        el.click();
+                    }
+                });
+            }
+
+            function toggleAllCharts(expand) {
+                document.querySelectorAll('.org-heading').forEach(function(el) {
+                    var icon = el.querySelector('.org-collapse-icon');
+                    var isCollapsed = icon.textContent === '\u25B6';
+                    if ((expand && isCollapsed) || (!expand && !isCollapsed)) {
+                        el.click();
+                    }
+                });
+            }
+
+            document.querySelector('.js-expand-all-table')?.addEventListener('click', function(e) { e.preventDefault(); toggleAllTable(true); });
+            document.querySelector('.js-collapse-all-table')?.addEventListener('click', function(e) { e.preventDefault(); toggleAllTable(false); });
+            document.querySelector('.js-expand-all-charts')?.addEventListener('click', function(e) { e.preventDefault(); toggleAllCharts(true); });
+            document.querySelector('.js-collapse-all-charts')?.addEventListener('click', function(e) { e.preventDefault(); toggleAllCharts(false); });
+
+            document.querySelectorAll('.js-status-notice').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var list = this.querySelector('.js-updates-list');
+                    if (list) {
+                        list.style.display = list.style.display === 'none' ? '' : 'none';
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
