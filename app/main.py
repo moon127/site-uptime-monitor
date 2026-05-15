@@ -400,6 +400,8 @@ async def admin_index(request: Request):
             "status_history": status_history,
             "org_names": list(config.orgs.keys()) if config.orgs else [],
             "site_names": list(config.sites.keys()),
+            "poll_interval": config.poll_interval,
+            "retention_days": config.retention_days,
         },
     )
 
@@ -664,6 +666,26 @@ async def admin_site_move(
 
     config.save()
     config._sync_db()
+    return RedirectResponse("/admin", status_code=303)
+
+
+@app.post("/admin/settings")
+async def admin_settings(
+    request: Request,
+    poll_interval: int = Form(...),
+    retention_days: int = Form(...),
+):
+    if not _check_admin(request):
+        raise HTTPException(status_code=401)
+
+    if poll_interval < 10:
+        raise HTTPException(status_code=400, detail="Poll interval must be at least 10 seconds")
+    if retention_days < 1:
+        raise HTTPException(status_code=400, detail="Retention days must be at least 1")
+
+    config.poll_interval = poll_interval
+    config.retention_days = retention_days
+    config.save()
     return RedirectResponse("/admin", status_code=303)
 
 

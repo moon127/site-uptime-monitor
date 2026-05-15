@@ -395,6 +395,35 @@ def test_status_survives_org_rename(admin_client, db):
     })
 
 
+# ── Settings ────────────────────────────────────────────────────────────
+
+def test_update_settings(admin_client):
+    from app.config import config
+    r = admin_client.post("/admin/settings", data={
+        "poll_interval": 30, "retention_days": 45
+    })
+    assert r.status_code == 303
+    assert config.poll_interval == 30
+    assert config.retention_days == 45
+
+
+def test_update_settings_rejects_invalid(admin_client):
+    from app.config import config
+    original_interval = config.poll_interval
+    r = admin_client.post("/admin/settings", data={
+        "poll_interval": 1, "retention_days": 45
+    })
+    assert r.status_code == 400
+    assert config.poll_interval == original_interval
+
+
+def test_update_settings_requires_auth(client):
+    r = client.post("/admin/settings", data={
+        "poll_interval": 30, "retention_days": 45
+    })
+    assert r.status_code == 401
+
+
 # ── Uptime % in dashboard ──────────────────────────────────────────────
 
 def test_uptime_column_in_dashboard(admin_client, db):

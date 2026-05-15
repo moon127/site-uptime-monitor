@@ -141,7 +141,7 @@
         </div>
 
         <div class="row mgmt-section">
-            <div class="col-6">
+            <div class="col-4">
                 <div class="p-card" style="padding: 1.5rem;">
                     <h3 class="p-heading--5">Add Organisation</h3>
                     <form method="POST" action="/admin/org/add">
@@ -155,7 +155,7 @@
                     </form>
                 </div>
             </div>
-            <div class="col-6">
+            <div class="col-4">
                 <div class="p-card" style="padding: 1.5rem;">
                     <h3 class="p-heading--5">Add Site to Existing Org</h3>
                     <form method="POST" action="/admin/site/add">
@@ -170,6 +170,19 @@
                         <label for="add_site_url" style="margin-top: 0.75rem;">URL:</label>
                         <input type="url" id="add_site_url" name="url" required class="p-input" style="width:100%;" placeholder="https://..." />
                         <button type="submit" class="p-button--positive" style="margin-top: 1rem;">Add Site</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-card" style="padding: 1.5rem;">
+                    <h3 class="p-heading--5">Global Settings</h3>
+                    <p class="p-text--default" style="font-size:0.85rem;color:#666;margin-bottom:0.75rem;">These settings are saved to <code>config.ini</code> and apply across the entire application.</p>
+                    <form method="POST" action="/admin/settings">
+                        <label for="poll_interval">Poll interval (seconds):</label>
+                        <input type="number" id="poll_interval" name="poll_interval" required min="10" class="p-input" style="width:100%;" value="{{ poll_interval }}" />
+                        <label for="retention_days" style="margin-top: 0.75rem;">Retention (days):</label>
+                        <input type="number" id="retention_days" name="retention_days" required min="1" class="p-input" style="width:100%;" value="{{ retention_days }}" />
+                        <button type="submit" class="p-button--positive" style="margin-top: 1rem;">Save Settings</button>
                     </form>
                 </div>
             </div>
