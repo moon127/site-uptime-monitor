@@ -94,6 +94,14 @@
             </div>
         </div>
         <div class="row" style="margin-top: 1rem;">
+            <div class="col-3">
+                <div class="p-card stat-card">
+                    <span class="stat-number">{{ "%.2f"|format(total_db_size_mb) }} MB</span>
+                    <span class="stat-label">Database Size</span>
+                </div>
+            </div>
+        </div>
+        <div class="row" style="margin-top: 1rem;">
             <div class="col-12">
                 <div class="p-table--mobile-card">
                     <table>
@@ -104,6 +112,7 @@
                                 <th class="u-align--right">UP</th>
                                 <th class="u-align--right">DOWN</th>
                                 <th class="u-align--right">Uptime %</th>
+                                <th class="u-align--right">DB Size</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -114,6 +123,7 @@
                                 <td class="u-align--right"><span class="status-up" style="color:#0e8420;">{{ s.up }}</span></td>
                                 <td class="u-align--right"><span class="status-down" style="color:#c7162b;">{{ s.down }}</span></td>
                                 <td class="u-align--right">{{ "%.1f"|format(s.up / s.total * 100) if s.total else "N/A" }}%</td>
+                                <td class="u-align--right">{% if s.db_size >= 1048576 %}{{ "%.2f"|format(s.db_size / 1048576) }} MB{% elif s.db_size >= 1024 %}{{ "%.1f"|format(s.db_size / 1024) }} KB{% else %}{{ s.db_size }} B{% endif %}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

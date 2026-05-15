@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import secrets
 import base64
 from collections import defaultdict
@@ -13,7 +14,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, cast, Integer
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.database import engine, SessionLocal
+from app.database import engine, SessionLocal, DB_PATH
 from app.models import Base, CheckResult, AdminUser, SiteStatus, Org, Site
 from app.config import config
 from app.monitor import SiteMonitor
@@ -334,15 +335,23 @@ async def admin_index(request: Request):
         )
 
         up_map = {r.site_id: r.up_count for r in per_site_up}
+        total_db_bytes = os.path.getsize(DB_PATH) if DB_PATH.exists() else 0
+        total_db_size_mb = round(total_db_bytes / (1024 * 1024), 2)
+        total_check_rows = sum(r.total for r in per_site_raw)
         site_stats = []
         for r in per_site_raw:
             site_obj = db.query(Site).filter(Site.id == r.site_id).first()
             name = site_obj.name if site_obj else f"unknown-{r.site_id}"
+            if total_check_rows > 0:
+                est_bytes = int(total_db_bytes * r.total / total_check_rows)
+            else:
+                est_bytes = 0
             site_stats.append({
                 "name": name,
                 "total": r.total,
                 "up": up_map.get(r.site_id, 0),
                 "down": r.total - up_map.get(r.site_id, 0),
+                "db_size": est_bytes,
             })
         site_stats.sort(key=lambda s: s["name"])
 
@@ -384,6 +393,7 @@ async def admin_index(request: Request):
             "total_down": total_down or 0,
             "total_sites": len(config.sites),
             "total_orgs": len(config.orgs) if config.orgs else 1,
+            "total_db_size_mb": total_db_size_mb,
             "site_stats": site_stats,
             "orgs": orgs_for_admin,
             "active_statuses": active_statuses,
